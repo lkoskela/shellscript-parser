@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "antlr4-bash",
+            "type": "antlr-debug",
+            "request": "launch",
+            "input": "src/tests/data/sample.sh",
+            "grammar": "grammar/Bash.g4",
+            "startRule": "prog",
+            "printParseTree": true,
+            "visualParseTree": true
+        }
+    ]
+}
