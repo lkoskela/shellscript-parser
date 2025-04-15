@@ -2,7 +2,7 @@
   "type": "module",
   "scripts": {
     "codegen": "scripts/codegen.sh ./grammar/Bash.g4 ./src/codegen",
-    "clean": "rm -rf build",
+    "clean": "mkdir -p build && rm -rf build",
     "build": "npm run --silent clean && npm run --silent codegen && tsc",
     "test": "npm run --silent build && vitest --run"
   },
