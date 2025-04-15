@@ -3,7 +3,7 @@ grammar Bash;
 /* PARSER RULES (recognized by lowercase/mixedcase naming) */
 
 prog
-    :   command ( COMMAND_SEPARATOR command )* EOF
+    :   command ( ( ';' | NEWLINE ) command )* EOF
     ;
 
 command
@@ -11,11 +11,25 @@ command
     ;
 
 assignment
-    :   VARIABLE_NAME EQUALS WORD WHITESPACE?
+    :   ASSIGNMENT
+    ;
+
+simple_command
+    :   simple_command_executable (WHITESPACE simple_command_element)* redirection_list?
+    |   assignment (WHITESPACE assignment)* WHITESPACE simple_command_executable (WHITESPACE simple_command_element)* redirection_list?
+    ;
+
+simple_command_executable
+    :   WORD
+    |   DOUBLEQUOTED_EXPRESSION
+    |   SINGLEQUOTED_EXPRESSION
     ;
 
 simple_command_element
     :   WORD
+    |   DOUBLEQUOTED_EXPRESSION
+    |   SINGLEQUOTED_EXPRESSION
+    |   WHITESPACE
     ;
 
 redirection_list
@@ -23,19 +37,18 @@ redirection_list
     ;
 
 multiline_command
-    : ( assignment )* multiline_command_line
+    :   assignment* multiline_command_line
     ;
 
 multiline_command_line
     :   simple_command_element (WHITESPACE simple_command_element)* LINE_CONTINUATION multiline_command_line
     ;
 
-simple_command
-    :   ( assignment )+ simple_command
-    |   simple_command_element (WHITESPACE | LINE_CONTINUATION)* simple_command_element* redirection_list?
-    ;
-
 /* LEXER RULES (recognized by all-caps naming) */
+
+WHITESPACE
+    :   ( ' ' | '\t' )+
+    ;
 
 EQUALS
     :   '='
@@ -73,7 +86,7 @@ REDIRECTION
     ;
 
 fragment NUMBER
-    : DIGIT+
+    : DIGIT+ ('.' DIGIT+)?
     ;
 
 fragment LETTER
@@ -89,20 +102,11 @@ fragment DIGIT
     ;
 
 fragment ALPHANUMERIC
-    :   [a-zA-Z0-9_]
-    ;
-
-WHITESPACE
-    :   ( ' ' | '\t' )+
+    :   ( ALPHA | DIGIT )
     ;
 
 LINE_CONTINUATION
-    : '\\' WHITESPACE* (NEWLINE WHITESPACE*)+ -> skip
-    ;
-
-COMMAND_SEPARATOR
-    :   (WHITESPACE | NEWLINE)* ';' (WHITESPACE | NEWLINE)*
-    |   WHITESPACE* NEWLINE WHITESPACE*
+    :   '\\' WHITESPACE* NEWLINE WHITESPACE* -> skip
     ;
 
 NEWLINE
@@ -112,6 +116,11 @@ NEWLINE
 QUOTED_EXPRESSION
     :   SINGLEQUOTED_EXPRESSION
     |   DOUBLEQUOTED_EXPRESSION
+    |   SLANTQUOTED_EXPRESSION
+    ;
+
+SLANTQUOTED_EXPRESSION
+    :   '`' ( '\\"' | ~'"' )* '`'
     ;
 
 DOUBLEQUOTED_EXPRESSION
@@ -164,19 +173,28 @@ fragment FILE_PATH_ELEMENT
     ;
 
 UNQUOTED_EXPRESSION
-    :   ( ALPHA | DIGIT )+
-    |   '$' LETTER ALPHANUMERIC*
+    :   ( ALPHA | DIGIT | '_' | '-' | '.' | '~' )+
+    |   '$' (LETTER | '_') (ALPHANUMERIC | '_')*
     |   FILE_PATH
+    ;
+
+ASSIGNMENT
+    :   [a-zA-Z_][a-zA-Z0-9_]* '=' ( ~[ \t\r\n'"`] | QUOTED_EXPRESSION )+
     ;
 
 VARIABLE_NAME
-    :   (LETTER | '_') ALPHANUMERIC
+    :   [a-zA-Z_][a-zA-Z0-9_]*
     ;
 
 WORD
-    :   UNQUOTED_EXPRESSION
-    |   QUOTED_EXPRESSION
+    :   ( ALPHA | DIGIT | '_' | '-' | '.' | '~' )+
+    |   '$' (LETTER | '_') (ALPHANUMERIC | '_')*
     |   FILE_PATH
+    ;
+
+VARIABLE_VALUE
+    :   WORD
+    |   QUOTED_EXPRESSION
     ;
 
 ANY: . ;  // recommended in https://tomassetti.me/best-practices-for-antlr-parsers/

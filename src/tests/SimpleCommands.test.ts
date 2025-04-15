@@ -6,7 +6,7 @@ const p = (input: string): string[] => parse(input).commands
 
 describe('simple commands', () => {
     const parseTestNameAsInput = (t: TestContext) => {
-        expect(p(t.meta.name)).toStrictEqual([t.meta.name])
+        expect(p(t.task.name)).toStrictEqual([t.task.name])
     }
 
     it('echo', parseTestNameAsInput)
