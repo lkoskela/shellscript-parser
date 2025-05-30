@@ -2,14 +2,13 @@
   "type": "module",
   "scripts": {
     "codegen": "scripts/codegen.sh ./grammar/Bash.g4 ./src/codegen",
-    "clean": "mkdir -p build && rm -rf build",
+    "clean": "if [ -d './build/' ]; then rm -r ./build/ ; fi",
     "build": "npm run --silent clean && npm run --silent codegen && tsc",
     "test": "npm run --silent build && vitest --run"
   },
   "devDependencies": {
-    "@types/antlr4": "^4.11.6",
-    "antlr4": "^4.13.2",
+    "antlr-ng": "^1.0.9",
     "typescript": "^5.8.3",
-    "vitest": "^3.1.1"
+    "vitest": "^3.1.4"
   }
 }

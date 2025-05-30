@@ -1,26 +1,27 @@
-import { describe, expect, it, TestContext } from 'vitest'
+import { describe, expect, it } from "vitest";
 
-import parse from '../ShellParser.js'
+import parse from "../ShellParser.js";
 
-const p = (input: string): string[] => parse(input).commands
+const p = (input: string): string[] => parse(input).commands;
 
-describe('single commands', () => {
-    const parseTestNameAsInput = (t: TestContext) => {
-        expect(p(t.task.name)).toStrictEqual([t.task.name])
-    }
+describe("single commands", () => {
+    describe("with arguments", () => {
+        [
+            "ls -l",
+            "cmd -s --long",
+            'echo "hello double quotes"',
+            "echo 'hello single quotes'",
+            'echo "hello $NAKED_USER"',
+            'echo "hello ${BRACKETED_USER}"',
+            'echo "hello $(parenthesized_execution)"',
+        ].forEach((name) => {
+            it(name, () => expect(p(name)).toStrictEqual([name]));
+        });
+    });
 
-    describe('with arguments', () => {
-        it('ls -l', parseTestNameAsInput)
-        it('cmd -s --long', parseTestNameAsInput)
-        it('echo "hello world"', parseTestNameAsInput)
-        it('echo \'hello world\'', parseTestNameAsInput)
-        it('echo "hello $USER"', parseTestNameAsInput)
-        it('echo "hello ${USER}"', parseTestNameAsInput)
-        it('echo "hello $(whoami)"', parseTestNameAsInput)
-    })
-
-    describe('with assignments', () => {
-        it('VAR=123 /bin/foo', parseTestNameAsInput)
-        it('VAR=123 FOO="BAR" /bin/foo', parseTestNameAsInput)
-    })
-})
+    describe("with assignments", () => {
+        ["VAR=123 /bin/foo", 'VAR=123 FOO="BAR" /bin/foo'].forEach((name) => {
+            it(name, () => expect(p(name)).toStrictEqual([name]));
+        });
+    });
+});

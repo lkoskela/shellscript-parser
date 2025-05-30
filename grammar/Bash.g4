@@ -1,50 +1,63 @@
 grammar Bash;
 
-/* PARSER RULES (recognized by lowercase/mixedcase naming) */
+/*************************************************************************************************************************
+   PARSER RULES (recognized by lowercase/mixedcase naming)
+ *************************************************************************************************************************/
 
 prog
-    :   command ( ( ';' | NEWLINE ) command )* EOF
+    :   command ( COMMAND_SEPARATOR command )* TRAILING_COMMAND_SEPARATOR?
     ;
 
 command
-    :   simple_command
+    :   multiline_command
+    |   singleline_command
     ;
 
-assignment
-    :   ASSIGNMENT
-    ;
-
-simple_command
-    :   simple_command_executable (WHITESPACE simple_command_element)* redirection_list?
-    |   assignment (WHITESPACE assignment)* WHITESPACE simple_command_executable (WHITESPACE simple_command_element)* redirection_list?
-    ;
-
-simple_command_executable
-    :   WORD
-    |   DOUBLEQUOTED_EXPRESSION
-    |   SINGLEQUOTED_EXPRESSION
-    ;
-
-simple_command_element
-    :   WORD
-    |   DOUBLEQUOTED_EXPRESSION
-    |   SINGLEQUOTED_EXPRESSION
-    |   WHITESPACE
-    ;
-
-redirection_list
-    :   ( REDIRECTION )+
+singleline_command
+    :   SIMPLE_COMMAND_EXECUTABLE (WHITESPACE SIMPLE_COMMAND_ELEMENT)* (WHITESPACE REDIRECTION)*
+    |   (ASSIGNMENT WHITESPACE)+ SIMPLE_COMMAND_EXECUTABLE (WHITESPACE SIMPLE_COMMAND_ELEMENT)* (WHITESPACE REDIRECTION)*
     ;
 
 multiline_command
-    :   assignment* multiline_command_line
+    :   MULTILINE_COMMAND_LINE (LINE_CONTINUATION MULTILINE_COMMAND_LINE)*
     ;
 
-multiline_command_line
-    :   simple_command_element (WHITESPACE simple_command_element)* LINE_CONTINUATION multiline_command_line
+/*************************************************************************************************************************
+    LEXER RULES (recognized by all-caps naming)
+ *************************************************************************************************************************/
+
+TRAILING_COMMAND_SEPARATOR
+    :   COMMAND_SEPARATOR* EOF -> skip
     ;
 
-/* LEXER RULES (recognized by all-caps naming) */
+COMMAND_SEPARATOR
+    :   (WHITESPACE* ';')+ WHITESPACE*
+    |   (WHITESPACE* NEWLINE)+ WHITESPACE*
+    ;
+
+SIMPLE_COMMAND_EXECUTABLE
+    :   WORD
+    |   DOUBLEQUOTED_EXPRESSION
+    |   SINGLEQUOTED_EXPRESSION
+    ;
+
+SIMPLE_COMMAND_ELEMENT
+    :   WORD
+    |   DOUBLEQUOTED_EXPRESSION
+    |   SINGLEQUOTED_EXPRESSION
+    ;
+
+MULTILINE_COMMAND_ASSIGNMENTS
+    :   (ASSIGNMENT WHITESPACE)+ (LINE_CONTINUATION MULTILINE_COMMAND_ASSIGNMENTS?)?
+    ;
+
+MULTILINE_COMMAND_LINE
+    :   MULTILINE_COMMAND_ASSIGNMENTS? SIMPLE_COMMAND_ELEMENT (WHITESPACE SIMPLE_COMMAND_ELEMENT)* LINE_CONTINUATION MULTILINE_COMMAND_LINE
+    ;
+
+TRAILING_WHITESPACE
+    :   ( ' ' | '\t' )+ ( COMMAND_SEPARATOR | EOF ) -> skip
+    ;
 
 WHITESPACE
     :   ( ' ' | '\t' )+
@@ -106,11 +119,11 @@ fragment ALPHANUMERIC
     ;
 
 LINE_CONTINUATION
-    :   '\\' WHITESPACE* NEWLINE WHITESPACE* -> skip
+    :   '\\' WHITESPACE? NEWLINE WHITESPACE? -> skip
     ;
 
 NEWLINE
-    : ('\r'? '\n' | '\r')+
+    : ('\r'? '\n' | '\r')+ -> skip
     ;
 
 QUOTED_EXPRESSION
@@ -189,12 +202,17 @@ VARIABLE_NAME
 WORD
     :   ( ALPHA | DIGIT | '_' | '-' | '.' | '~' )+
     |   '$' (LETTER | '_') (ALPHANUMERIC | '_')*
+    |   '$' '{' (LETTER | '_') (ALPHANUMERIC | '_')* '}'
     |   FILE_PATH
     ;
 
 VARIABLE_VALUE
     :   WORD
     |   QUOTED_EXPRESSION
+    ;
+
+COMMENT
+    : '#' ~[\r\n]* -> skip
     ;
 
 ANY: . ;  // recommended in https://tomassetti.me/best-practices-for-antlr-parsers/
