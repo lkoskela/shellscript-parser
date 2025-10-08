@@ -7,7 +7,7 @@
     "test": "npm run --silent build && vitest --run"
   },
   "devDependencies": {
-    "antlr-ng": "^1.0.9",
+    "antlr-ng": "^1.0.10",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
   }
